@@ -11,159 +11,663 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --success: #22c55e;
+            --success-glow: rgba(34, 197, 94, 0.4);
+            --warning: #f59e0b;
+            --warning-glow: rgba(245, 158, 11, 0.4);
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.4);
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-card-hover: #1a1a24;
+            --bg-glass: rgba(18, 18, 26, 0.7);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            --gradient-1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            --gradient-2: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+            --gradient-success: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            --gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            --shadow-glow: 0 0 30px var(--primary-glow);
+            --shadow-glow-success: 0 0 30px var(--success-glow);
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #1a1a1a;
-            color: #e0e0e0;
-            line-height: 1.6;
-            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+            background: var(--bg-dark);
+            background-image:
+                radial-gradient(ellipse at top, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom right, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            line-height: 1.5;
+            padding: 16px;
             min-height: 100vh;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
+            position: relative;
         }
 
+        .container::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 1400px;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Header */
         .header {
-            background: #2d2d2d;
-            padding: 20px 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 16px 20px;
+            border-radius: 16px;
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border: 1px solid #404040;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.5), transparent);
         }
 
         .header h1 {
-            font-size: 24px;
-            color: #ffffff;
-            font-weight: 600;
+            font-size: 20px;
+            font-weight: 800;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
         }
 
         .header-controls {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             align-items: center;
         }
 
         .status-badge {
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 1px;
+            backdrop-filter: blur(10px);
+            min-width: 80px;
+            width: 80px;
+            height: 28px;
+            line-height: 16px;
+            text-align: center;
+            white-space: nowrap;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .status-badge.online {
-            background: #28a745;
-            color: white;
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            box-shadow: 0 0 20px var(--success-glow);
         }
 
         .status-badge.loading {
-            background: #ffc107;
-            color: #000;
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            box-shadow: 0 0 20px var(--warning-glow);
         }
 
         .status-badge.error {
-            background: #dc3545;
-            color: white;
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            box-shadow: 0 0 20px var(--danger-glow);
         }
 
         .btn {
-            padding: 8px 16px;
+            padding: 10px 20px;
             border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background: #007bff;
+            border-radius: 10px;
+            background: var(--gradient-1);
             color: white;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-primary:hover {
-            background: #0056b3;
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
         }
 
-        .btn-primary:disabled {
-            background: #555;
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
-            opacity: 0.6;
+            transform: none;
+            box-shadow: none;
         }
 
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            font-weight: 500;
+        }
+
+        .auto-refresh input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            appearance: none;
+            background: var(--bg-card-hover);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .auto-refresh input[type="checkbox"]:checked {
+            background: var(--gradient-1);
+            border-color: transparent;
+        }
+
+        .auto-refresh input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .auto-refresh label {
+            cursor: pointer;
+            user-select: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            background: var(--bg-card);
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .toolbar-label {
+            font-size: 10px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input[type="text"] {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding-right: 36px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8.5L2 4.5h8z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 12px;
+        }
+
+        select:hover {
+            border-color: var(--border-hover);
+            background-color: var(--bg-card-hover);
+        }
+
+        input[type="text"]:hover {
+            border-color: var(--border-hover);
+            background: var(--bg-card-hover);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: var(--bg-card-hover);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--bg-card-hover);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        select option {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        input[type="text"] {
+            min-width: 280px;
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* Stats */
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            gap: 12px;
             margin-bottom: 20px;
         }
 
         .stat-card {
-            background: #2d2d2d;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            border: 1px solid #404040;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--gradient-1);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-card:hover {
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-4px);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
         }
 
         .stat-label {
-            font-size: 12px;
-            color: #aaa;
+            font-size: 10px;
+            color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
+            letter-spacing: 0.8px;
+            font-weight: 700;
+        }
+
+        .stat-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
         }
 
         .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: #ffffff;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .stat-card.active .stat-value {
-            color: #28a745;
+            background: var(--gradient-success);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card.active .stat-icon {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .stat-card.active:hover {
+            box-shadow: var(--shadow-glow-success);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .stat-card.active::before {
+            background: var(--gradient-success);
         }
 
         .stat-card.inactive .stat-value {
-            color: #ffc107;
+            background: var(--gradient-warning);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card.inactive .stat-icon {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .stat-card.inactive::before {
+            background: var(--gradient-warning);
         }
 
         .stat-card.error .stat-value {
-            color: #dc3545;
+            background: var(--gradient-danger);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
+        .stat-card.error .stat-icon {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .stat-card.error::before {
+            background: var(--gradient-danger);
+        }
+
+        /* Quota Summary */
+        .quota-summary {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .quota-summary-header {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quota-summary-header::before {
+            content: '';
+            width: 3px;
+            height: 16px;
+            background: var(--gradient-1);
+            border-radius: 2px;
+        }
+
+        .quota-summary-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 12px;
+        }
+
+        .quota-summary-account {
+            background: var(--bg-card);
+            padding: 14px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--border);
+        }
+
+        .quota-summary-account:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+            transform: translateY(-4px);
+        }
+
+        .quota-summary-account-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .quota-summary-account-email {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .quota-summary-account-models {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .quota-summary-account-quota {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .quota-summary-account-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quota-summary-account-top span {
+            font-size: 10px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .quota-summary-account-percent {
+            font-size: 20px;
+            font-weight: 800;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .quota-summary-account-percent.healthy {
+            background: var(--gradient-success);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .quota-summary-account-percent.warning {
+            background: var(--gradient-warning);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .quota-summary-account-percent.danger {
+            background: var(--gradient-danger);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .quota-summary-account-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .quota-summary-account-bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .quota-summary-account-bar-fill.healthy {
+            background: var(--gradient-success);
+            box-shadow: 0 0 15px var(--success-glow);
+        }
+
+        .quota-summary-account-bar-fill.warning {
+            background: var(--gradient-warning);
+            box-shadow: 0 0 15px var(--warning-glow);
+        }
+
+        .quota-summary-account-bar-fill.danger {
+            background: var(--gradient-danger);
+            box-shadow: 0 0 15px var(--danger-glow);
+        }
+
+        /* Accounts */
         .accounts {
             display: grid;
-            gap: 20px;
+            gap: 24px;
         }
 
         .account-card {
-            background: #2d2d2d;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            padding: 20px;
-            border: 1px solid #404040;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .account-card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
         }
 
         .account-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #404040;
+            padding: 14px 16px;
             cursor: pointer;
             user-select: none;
+            border-bottom: 1px solid var(--border);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .account-header:hover {
-            opacity: 0.8;
+            background: rgba(99, 102, 241, 0.05);
         }
 
         .account-header-left {
@@ -174,232 +678,536 @@
         }
 
         .collapse-icon {
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #aaa;
-            font-size: 14px;
-            transition: transform 0.3s ease;
+            color: var(--text-muted);
+            font-size: 7px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
         }
 
         .account-card.collapsed .collapse-icon {
             transform: rotate(-90deg);
         }
 
+        .account-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .account-email {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .account-project {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            padding: 3px 6px;
+            background: var(--bg-card);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            display: inline-block;
+        }
+
+        .account-summary {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+
+        .account-summary-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            padding: 4px 8px;
+            background: var(--bg-card);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .account-summary-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .account-summary-label {
+            color: var(--text-secondary);
+        }
+
+        .account-summary-value {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .account-summary-value.healthy {
+            background: var(--gradient-success);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .account-summary-item.healthy {
+            border-color: rgba(34, 197, 94, 0.3);
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .account-summary-value.warning {
+            background: var(--gradient-warning);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .account-summary-item.warning {
+            border-color: rgba(245, 158, 11, 0.3);
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .account-summary-value.danger {
+            background: var(--gradient-danger);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .account-summary-item.danger {
+            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .account-header-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .account-status {
+            padding: 5px 10px;
+            border-radius: 50px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .account-status.active {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            box-shadow: 0 0 15px var(--success-glow);
+        }
+
+        .account-status.inactive {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            box-shadow: 0 0 15px var(--warning-glow);
+        }
+
+        .account-status.error {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            box-shadow: 0 0 15px var(--danger-glow);
+        }
+
+        .models-container {
+            padding: 20px;
+            background: var(--bg-card);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
         .account-card.collapsed .models-container {
             display: none;
         }
 
-        .account-email {
-            font-size: 16px;
-            font-weight: 600;
-            color: #ffffff;
-        }
-
-        .account-status {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .account-status.active {
-            background: #28a745;
-            color: white;
-        }
-
-        .account-status.inactive {
-            background: #ffc107;
-            color: #000;
-        }
-
-        .account-status.error {
-            background: #dc3545;
-            color: white;
-        }
-
-        .project-id {
-            font-size: 12px;
-            color: #aaa;
-            margin-bottom: 15px;
-        }
-
-        .models-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
         .model-category {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .model-category:last-child {
+            margin-bottom: 0;
         }
 
         .category-header {
-            font-size: 14px;
-            font-weight: 600;
-            color: #aaa;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-primary);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #404040;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            padding: 8px 12px;
+            background: var(--bg-glass);
+            border-radius: 8px;
+            border: 1px solid var(--border);
         }
 
         .models-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 14px;
         }
 
         .model-card {
-            background: #1f1f1f;
-            border: 1px solid #404040;
-            border-radius: 6px;
-            padding: 12px;
-            transition: all 0.2s;
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .model-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .model-card.warning::before {
+            background: var(--gradient-warning);
+            opacity: 1;
+        }
+
+        .model-card.danger::before {
+            background: var(--gradient-danger);
+            opacity: 1;
         }
 
         .model-card:hover {
-            border-color: #666;
-            background: #252525;
-        }
-
-        /* Warning styles for low quota */
-        .model-card.warning {
-            border-color: #ffc107;
-            background: #2a2415;
+            border-color: var(--border-hover);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            transform: translateY(-4px);
         }
 
         .model-card.warning:hover {
-            border-color: #ffc107;
-            background: #332a1a;
-        }
-
-        .model-card.danger {
-            border-color: #dc3545;
-            background: #2a1515;
+            box-shadow: 0 8px 30px rgba(245, 158, 11, 0.2);
         }
 
         .model-card.danger:hover {
-            border-color: #dc3545;
-            background: #331a1a;
+            box-shadow: 0 8px 30px rgba(239, 68, 68, 0.2);
+        }
+
+        .model-progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .model-progress-fill {
+            height: 100%;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .model-progress-fill.high {
+            background: var(--gradient-success);
+            box-shadow: 0 0 10px var(--success-glow);
+        }
+
+        .model-progress-fill.medium {
+            background: var(--gradient-warning);
+            box-shadow: 0 0 10px var(--warning-glow);
+        }
+
+        .model-progress-fill.low {
+            background: var(--gradient-danger);
+            box-shadow: 0 0 10px var(--danger-glow);
         }
 
         .model-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 6px;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            gap: 10px;
         }
 
         .model-name {
-            font-size: 14px;
-            font-weight: 500;
-            color: #e0e0e0;
-        }
-
-        .model-card.warning .model-name,
-        .model-card.danger .model-name {
+            font-size: 12px;
             font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+            line-height: 1.4;
+            word-break: break-word;
+            min-width: 0;
         }
 
         .model-percent {
-            font-size: 18px;
-            font-weight: 700;
+            font-size: 20px;
+            font-weight: 800;
+            flex-shrink: 0;
+            line-height: 1;
         }
 
         .model-percent.high {
-            color: #28a745;
+            background: var(--gradient-success);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .model-percent.medium {
-            color: #ffc107;
+            background: var(--gradient-warning);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .model-percent.low {
-            color: #dc3545;
+            background: var(--gradient-danger);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .model-reset {
-            font-size: 11px;
-            color: #888;
+        .model-details {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 10px;
+            color: var(--text-secondary);
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+
+        .model-details-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .model-details-row span:first-child {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .model-details-row span:last-child {
+            color: var(--text-primary);
+            font-weight: 600;
         }
 
         .error-message {
-            background: #2a1515;
-            color: #ff6b6b;
-            padding: 12px;
-            border-radius: 4px;
-            margin-top: 15px;
-            font-size: 14px;
-            border: 1px solid #dc3545;
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin: 12px 16px;
+            font-size: 11px;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            box-shadow: 0 0 20px var(--danger-glow);
         }
 
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #888;
+            color: var(--text-secondary);
         }
 
         .empty-state h2 {
-            font-size: 20px;
-            margin-bottom: 10px;
-            color: #e0e0e0;
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .empty-state p {
+            font-size: 12px;
+            max-width: 400px;
+            margin: 0 auto;
         }
 
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 60px 20px;
         }
 
         .spinner {
-            border: 3px solid #404040;
-            border-top: 3px solid #007bff;
+            border: 3px solid var(--border);
+            border-top: 3px solid transparent;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+            width: 32px;
+            height: 32px;
+            animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            margin: 0 auto 12px;
+            position: relative;
+        }
+
+        .spinner::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            right: 3px;
+            bottom: 3px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            border-top-color: var(--primary);
+            animation: spin 0.6s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            to { transform: rotate(360deg); }
         }
 
-        .auto-refresh {
+        .filter-info {
+            font-size: 11px;
+            color: var(--text-secondary);
+            padding: 10px 14px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: #e0e0e0;
+            gap: 6px;
         }
 
-        .auto-refresh input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
+        .filter-info::before {
+            content: '🔍';
+            font-size: 12px;
+        }
+
+        .filter-info strong {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .no-results h2 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .no-results p {
+            font-size: 12px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .model-card.hidden,
+        .account-card.hidden,
+        .model-category.hidden {
+            display: none;
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+
             .header {
                 flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
+                gap: 12px;
+                align-items: stretch;
+            }
+
+            .header h1 {
+                font-size: 16px;
             }
 
             .header-controls {
-                width: 100%;
                 flex-wrap: wrap;
+                gap: 8px;
+                justify-content: stretch;
+            }
+
+            .btn {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .auto-refresh {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .stat-value {
+                font-size: 20px;
+            }
+
+            .stat-card {
+                padding: 14px;
+            }
+
+            .stat-header {
+                margin-bottom: 8px;
+            }
+
+            .quota-summary-list {
+                grid-template-columns: 1fr;
             }
 
             .models-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .toolbar-group {
+                width: 100%;
+            }
+
+            input[type="text"] {
+                min-width: 100%;
+            }
+
+            .account-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .account-header-left {
+                width: 100%;
+            }
+
+            .account-header-right {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .quota-summary-account {
+                padding: 12px;
             }
         }
     </style>
@@ -411,36 +1219,71 @@
             <div class="header-controls">
                 <div class="auto-refresh">
                     <input type="checkbox" id="autoRefresh">
-                    <label for="autoRefresh">Auto-refresh</label>
+                    <label for="autoRefresh">Auto (60s)</label>
                 </div>
-                <button class="btn btn-primary" id="refreshBtn">Refresh</button>
+                <button class="btn" id="refreshBtn">Refresh</button>
                 <div class="status-badge online" id="statusBadge">Online</div>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <div class="toolbar-group">
+                <span class="toolbar-label">Filter:</span>
+                <select id="filterCategory">
+                    <option value="all">All Categories</option>
+                    <option value="claude">Claude</option>
+                    <option value="gemini">Gemini</option>
+                    <option value="gpt">GPT</option>
+                    <option value="imagen">Imagen</option>
+                </select>
+            </div>
+            <div class="toolbar-group" style="flex: 1;">
+                <input type="text" id="searchInput" placeholder="Search by model name...">
             </div>
         </div>
 
         <div class="stats">
             <div class="stat-card">
-                <div class="stat-label">Total Accounts</div>
+                <div class="stat-header">
+                    <div class="stat-label">Total Accounts</div>
+                    <div class="stat-icon">📊</div>
+                </div>
                 <div class="stat-value" id="statTotal">0</div>
             </div>
             <div class="stat-card active">
-                <div class="stat-label">Active</div>
+                <div class="stat-header">
+                    <div class="stat-label">Active Accounts</div>
+                    <div class="stat-icon">✓</div>
+                </div>
                 <div class="stat-value" id="statActive">0</div>
             </div>
             <div class="stat-card inactive">
-                <div class="stat-label">Inactive</div>
+                <div class="stat-header">
+                    <div class="stat-label">Inactive Accounts</div>
+                    <div class="stat-icon">○</div>
+                </div>
                 <div class="stat-value" id="statInactive">0</div>
             </div>
             <div class="stat-card error">
-                <div class="stat-label">Errors</div>
+                <div class="stat-header">
+                    <div class="stat-label">Error Accounts</div>
+                    <div class="stat-icon">✕</div>
+                </div>
                 <div class="stat-value" id="statError">0</div>
+            </div>
+        </div>
+
+        <div class="quota-summary" id="quotaSummary" style="display: none;">
+            <div class="quota-summary-header">Account Quota Summary</div>
+            <div class="quota-summary-list" id="quotaSummaryList">
+                <!-- Summary will be populated by JavaScript -->
             </div>
         </div>
 
         <div id="content">
             <div class="loading">
                 <div class="spinner"></div>
-                <div>Loading quota data...</div>
+                <div>Loading...</div>
             </div>
         </div>
     </div>
@@ -448,25 +1291,39 @@
     <script>
         const API_URL = '/v1/antigravity-quota';
         let refreshTimer = null;
-        const REFRESH_INTERVAL = 60000; // 60 seconds
+        const REFRESH_INTERVAL = 60000;
+        let originalData = null;
 
         const refreshBtn = document.getElementById('refreshBtn');
         const autoRefreshCheckbox = document.getElementById('autoRefresh');
         const statusBadge = document.getElementById('statusBadge');
         const content = document.getElementById('content');
+        const filterCategory = document.getElementById('filterCategory');
+        const searchInput = document.getElementById('searchInput');
 
-        // Load data on page load
         loadData();
 
-        // Event listeners
         refreshBtn.addEventListener('click', loadData);
         autoRefreshCheckbox.addEventListener('change', toggleAutoRefresh);
+        filterCategory.addEventListener('change', applyFilters);
+        searchInput.addEventListener('input', debounce(applyFilters, 300));
 
-        // Auto-refresh if enabled
         const savedAutoRefresh = localStorage.getItem('antigravity_autoRefresh') === 'true';
         if (savedAutoRefresh) {
             autoRefreshCheckbox.checked = true;
             startAutoRefresh();
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
         }
 
         function toggleAutoRefresh() {
@@ -493,9 +1350,7 @@
 
         async function loadData() {
             refreshBtn.disabled = true;
-            statusBadge.textContent = 'Loading...';
-            statusBadge.className = 'status-badge loading';
-            content.innerHTML = '<div class="loading"><div class="spinner"></div><div>Loading quota data...</div></div>';
+            content.innerHTML = '<div class="loading"><div class="spinner"></div><div>Loading...</div></div>';
 
             try {
                 const response = await fetch(API_URL);
@@ -524,7 +1379,7 @@
         }
 
         function displayData(data) {
-            // Update stats
+            originalData = data;
             document.getElementById('statTotal').textContent = data.total_accounts || 0;
             document.getElementById('statActive').textContent = data.active_accounts || 0;
             document.getElementById('statInactive').textContent = data.inactive_accounts || 0;
@@ -537,12 +1392,153 @@
                         <p>No Antigravity accounts detected in the system.</p>
                     </div>
                 `;
+                document.getElementById('quotaSummary').style.display = 'none';
                 return;
             }
 
-            // Render accounts
-            const accountsHTML = data.accounts.map((account, index) => createAccountHTML(account, index)).join('');
-            content.innerHTML = `<div class="accounts">${accountsHTML}</div>`;
+            calculateQuotaSummary(data.accounts);
+            applyFilters();
+        }
+
+        function calculateQuotaSummary(accounts) {
+            const accountSummaries = [];
+
+            accounts.forEach(account => {
+                if (!account.model_quotas || account.model_quotas.length === 0) {
+                    return;
+                }
+
+                let totalPercent = 0;
+                let modelCount = 0;
+                let totalQuota = 0;
+                let totalRemaining = 0;
+                let hasValidData = false;
+
+                account.model_quotas.forEach(quota => {
+                    if (quota.remaining_percent !== undefined) {
+                        totalPercent += quota.remaining_percent;
+                        modelCount++;
+                        hasValidData = true;
+                    }
+
+                    if (quota.limit !== undefined && quota.remaining !== undefined) {
+                        totalQuota += quota.limit;
+                        totalRemaining += quota.remaining;
+                    }
+                });
+
+                if (hasValidData && modelCount > 0) {
+                    const avgPercent = totalPercent / modelCount;
+                    accountSummaries.push({
+                        email: account.email || 'Unknown',
+                        modelCount: account.model_quotas.length,
+                        avgPercent: avgPercent,
+                        totalRemaining: totalRemaining,
+                        totalQuota: totalQuota
+                    });
+                }
+            });
+
+            accountSummaries.sort((a, b) => a.avgPercent - b.avgPercent);
+            displayQuotaSummary(accountSummaries);
+        }
+
+        function displayQuotaSummary(accountSummaries) {
+            const quotaSummary = document.getElementById('quotaSummary');
+            const quotaSummaryList = document.getElementById('quotaSummaryList');
+
+            if (accountSummaries.length === 0) {
+                quotaSummary.style.display = 'none';
+                return;
+            }
+
+            const summaryHTML = accountSummaries.map(account => {
+                const percentClass = account.avgPercent >= 60 ? 'healthy' : account.avgPercent >= 20 ? 'warning' : 'danger';
+
+                return `
+                    <div class="quota-summary-account">
+                        <div class="quota-summary-account-info">
+                            <div class="quota-summary-account-email">${account.email}</div>
+                            <div class="quota-summary-account-models">${account.modelCount} models • ${formatNumber(account.totalRemaining)} / ${formatNumber(account.totalQuota)}</div>
+                        </div>
+                        <div class="quota-summary-account-quota">
+                            <div class="quota-summary-account-top">
+                                <span>Avg Usage</span>
+                                <div class="quota-summary-account-percent ${percentClass}">${account.avgPercent.toFixed(1)}%</div>
+                            </div>
+                            <div class="quota-summary-account-bar">
+                                <div class="quota-summary-account-bar-fill ${percentClass}" style="width: ${Math.max(0, Math.min(100, account.avgPercent))}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            quotaSummaryList.innerHTML = summaryHTML;
+            quotaSummary.style.display = 'block';
+        }
+
+        function applyFilters() {
+            if (!originalData || !originalData.accounts) return;
+
+            const categoryFilter = filterCategory.value;
+            const searchTerm = searchInput.value.toLowerCase().trim();
+
+            let filteredAccounts = originalData.accounts.map(account => {
+                const filteredAccount = { ...account };
+                if (account.model_quotas) {
+                    let filteredQuotas = account.model_quotas.filter(quota => {
+                        const modelName = (quota.display_name || quota.model || '').toLowerCase();
+                        const category = getModelCategory(quota.model);
+                        
+                        if (categoryFilter !== 'all' && category !== categoryFilter) {
+                            return false;
+                        }
+                        
+                        if (searchTerm && !modelName.includes(searchTerm)) {
+                            return false;
+                        }
+                        
+                        return true;
+                    });
+
+                    filteredAccount.model_quotas = filteredQuotas;
+                }
+                return filteredAccount;
+            }).filter(account => {
+                return !account.model_quotas || account.model_quotas.length > 0;
+            });
+
+            if (filteredAccounts.length === 0) {
+                content.innerHTML = `
+                    <div class="no-results">
+                        <h2>No Results Found</h2>
+                        <p>Try adjusting your filters or search terms.</p>
+                    </div>
+                `;
+                document.getElementById('quotaSummary').style.display = 'none';
+                return;
+            }
+
+            const totalModels = filteredAccounts.reduce((sum, account) => {
+                return sum + (account.model_quotas ? account.model_quotas.length : 0);
+            }, 0);
+
+            const activeFilters = [];
+            if (categoryFilter !== 'all') activeFilters.push(`Category: ${categoryFilter}`);
+            if (searchTerm) activeFilters.push(`Search: "${searchTerm}"`);
+
+            const filterInfoHTML = activeFilters.length > 0
+                ? `<div class="filter-info">
+                    Showing <strong>${filteredAccounts.length}</strong> account${filteredAccounts.length !== 1 ? 's' : ''} 
+                    with <strong>${totalModels}</strong> model${totalModels !== 1 ? 's' : ''}
+                    ${activeFilters.length > 0 ? ` • ${activeFilters.join(' • ')}` : ''}
+                   </div>`
+                : '';
+
+            calculateQuotaSummary(filteredAccounts);
+            const accountsHTML = filteredAccounts.map((account, index) => createAccountHTML(account, index)).join('');
+            content.innerHTML = `${filterInfoHTML}<div class="accounts">${accountsHTML}</div>`;
         }
 
         function getModelCategory(modelName) {
@@ -571,18 +1567,17 @@
                 'gemini': 'Gemini',
                 'gpt': 'GPT',
                 'imagen': 'Imagen',
-                'other': 'Other Models'
+                'other': 'Other'
             };
             return labels[category] || 'Other';
         }
 
         function createAccountHTML(account, index) {
             const statusClass = account.status || 'error';
-            const accountId = `account-${index}`;
+            const accountId = `account-${account.email || 'unknown'}-${index}`;
             
             let modelsHTML = '';
             if (account.model_quotas && account.model_quotas.length > 0) {
-                // Group models by category
                 const grouped = {};
                 account.model_quotas.forEach(quota => {
                     const category = getModelCategory(quota.model);
@@ -592,12 +1587,10 @@
                     grouped[category].push(quota);
                 });
 
-                // Sort categories by priority
                 const sortedCategories = Object.keys(grouped).sort((a, b) => {
                     return getCategoryOrder(a) - getCategoryOrder(b);
                 });
 
-                // Render each category
                 modelsHTML = sortedCategories.map(category => {
                     const models = grouped[category];
                     const categoryLabel = getCategoryLabel(category);
@@ -611,11 +1604,11 @@
                     `;
                 }).join('');
             } else {
-                modelsHTML = '<p style="color: #888; font-size: 14px;">No quota data available</p>';
+                modelsHTML = '<p style="color: var(--text-secondary); font-size: 14px; padding: 16px; text-align: center;">No quota data</p>';
             }
 
             const errorHTML = account.error 
-                ? `<div class="error-message">Error: ${account.error}</div>`
+                ? `<div class="error-message">${account.error}</div>`
                 : '';
 
             return `
@@ -623,11 +1616,15 @@
                     <div class="account-header" onclick="toggleAccount('${accountId}')">
                         <div class="account-header-left">
                             <div class="collapse-icon">▼</div>
-                            <div class="account-email">${account.email || 'Unknown'}</div>
+                            <div class="account-info">
+                                <div class="account-email">${account.email || 'Unknown'}</div>
+                                ${account.project_id ? `<div class="account-project">${account.project_id}</div>` : ''}
+                            </div>
                         </div>
-                        <div class="account-status ${statusClass}">${statusClass.toUpperCase()}</div>
+                        <div class="account-header-right">
+                            <div class="account-status ${statusClass}">${statusClass.toUpperCase()}</div>
+                        </div>
                     </div>
-                    ${account.project_id ? `<div class="project-id">Project: ${account.project_id}</div>` : ''}
                     <div class="models-container">${modelsHTML}</div>
                     ${errorHTML}
                 </div>
@@ -644,28 +1641,36 @@
         function createModelHTML(quota) {
             const percent = quota.remaining_percent || 0;
             
-            // Determine color class and warning level
             let percentClass, warningClass;
-            if (percent >= 50) {
+            if (percent >= 60) {
                 percentClass = 'high';
                 warningClass = '';
             } else if (percent >= 20) {
                 percentClass = 'medium';
-                warningClass = 'warning'; // Yellow warning
+                warningClass = 'warning';
             } else {
                 percentClass = 'low';
-                warningClass = 'danger'; // Red danger
+                warningClass = 'danger';
             }
 
             const resetTime = quota.reset_time ? formatResetTime(quota.reset_time) : null;
+            const usageText = quota.remaining !== undefined && quota.limit !== undefined
+                ? `${formatNumber(quota.remaining)} / ${formatNumber(quota.limit)}`
+                : '';
 
             return `
-                <div class="model-card ${warningClass}">
+                <div class="model-card ${warningClass}" data-model="${(quota.display_name || quota.model).toLowerCase()}" data-category="${getModelCategory(quota.model)}" data-percent="${percent}">
                     <div class="model-header">
-                        <div class="model-name">${quota.display_name || quota.model}</div>
-                        <div class="model-percent ${percentClass}">${percent.toFixed(1)}%</div>
+                        <div class="model-name" title="${quota.display_name || quota.model}">${quota.display_name || quota.model}</div>
+                        <div class="model-percent ${percentClass}">${percent.toFixed(0)}%</div>
                     </div>
-                    ${resetTime ? `<div class="model-reset">Reset: ${resetTime}</div>` : ''}
+                    <div class="model-details">
+                        ${usageText ? `<div class="model-details-row"><span>Usage:</span><span>${usageText}</span></div>` : ''}
+                        ${resetTime ? `<div class="model-details-row"><span>Reset:</span><span>${resetTime}</span></div>` : ''}
+                    </div>
+                    <div class="model-progress-bar">
+                        <div class="model-progress-fill ${percentClass}" style="width: ${Math.max(0, Math.min(100, percent))}%"></div>
+                    </div>
                 </div>
             `;
         }
@@ -678,11 +1683,21 @@
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit',
-                    hour12: false
+                    hour12: false,
+                    timeZone: 'Asia/Saigon'
                 });
             } catch (e) {
                 return timestamp;
             }
+        }
+
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
         }
     </script>
 </body>
