@@ -1,0 +1,41 @@
+host: ""
+port: 8317
+tls:
+  enable: false
+  cert: ""
+  key: ""
+remote-management:
+  allow-remote: true
+  secret-key: "$2a$10$KNLvs64b4GTMCZB9AL9Ma.Lsl8wTKozf6lJGfeBQT2qE90FbdfXA6"
+  disable-control-panel: false
+  panel-github-repository: "https://github.com/router-for-me/Cli-Proxy-API-Management-Center"
+auth-dir: "/root/.cli-proxy-api"
+api-keys:
+  - proxy-ddtu
+debug: false
+commercial-mode: false
+logging-to-file: true
+logs-max-total-size-mb: 100
+usage-statistics-enabled: true
+proxy-url: ""
+force-model-prefix: false
+request-retry: 1
+max-retry-interval: 30
+quota-exceeded:
+  switch-project: true
+  switch-preview-model: true
+routing:
+  strategy: "round-robin"
+ws-auth: false
+request-log: false
+streaming: {}
+disable-cooling: false
+ampcode:
+  upstream-url: ""
+  upstream-api-key: ""
+  restrict-management-to-localhost: false
+  model-mappings: []
+  force-model-mappings: false
+payload:
+  default: []
+  override: []
