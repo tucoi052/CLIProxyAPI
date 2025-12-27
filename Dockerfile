@@ -23,6 +23,8 @@ RUN mkdir /CLIProxyAPI
 COPY --from=builder ./app/CLIProxyAPI /CLIProxyAPI/CLIProxyAPI
 
 COPY config.example.yaml /CLIProxyAPI/config.example.yaml
+COPY static/antigravity-quota.html /CLIProxyAPI/static/antigravity-quota.html
+RUN chmod 644 /CLIProxyAPI/static/antigravity-quota.html
 
 WORKDIR /CLIProxyAPI
 

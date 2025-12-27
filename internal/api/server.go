@@ -309,6 +309,7 @@ func NewServer(cfg *config.Config, authManager *auth.Manager, accessManager *sdk
 // It defines the endpoints and associates them with their respective handlers.
 func (s *Server) setupRoutes() {
 	s.engine.GET("/management.html", s.serveManagementControlPanel)
+	s.engine.GET("/antigravity-quota.html", s.serveAntigravityQuotaDashboard)
 	openaiHandlers := openai.NewOpenAIAPIHandler(s.handlers)
 	geminiHandlers := gemini.NewGeminiAPIHandler(s.handlers)
 	geminiCLIHandlers := gemini.NewGeminiCLIAPIHandler(s.handlers)
@@ -593,7 +594,11 @@ func (s *Server) registerManagementRoutes() {
 		mgmt.POST("/iflow-auth-url", s.mgmt.RequestIFlowCookieToken)
 		mgmt.POST("/oauth-callback", s.mgmt.PostOAuthCallback)
 		mgmt.GET("/get-auth-status", s.mgmt.GetAuthStatus)
+		mgmt.GET("/antigravity-quota", s.mgmt.GetAntigravityQuota)
 	}
+
+	// Public antigravity quota endpoint (no auth required)
+	s.engine.GET("/v1/antigravity-quota", s.mgmt.GetAntigravityQuota)
 }
 
 func (s *Server) managementAvailabilityMiddleware() gin.HandlerFunc {
@@ -626,6 +631,27 @@ func (s *Server) serveManagementControlPanel(c *gin.Context) {
 		}
 
 		log.WithError(err).Error("failed to stat management control panel asset")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.File(filePath)
+}
+
+func (s *Server) serveAntigravityQuotaDashboard(c *gin.Context) {
+	staticDir := managementasset.StaticDir(s.configFilePath)
+	if strings.TrimSpace(staticDir) == "" {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	filePath := filepath.Join(staticDir, "antigravity-quota.html")
+	if _, err := os.Stat(filePath); err != nil {
+		if os.IsNotExist(err) {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+		log.WithError(err).Error("failed to stat antigravity quota dashboard asset")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}

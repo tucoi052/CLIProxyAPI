@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity Quota Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: #2d2d2d;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #404040;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.online {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-badge.loading {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .status-badge.error {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-primary:disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border: 1px solid #404040;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .stat-card.active .stat-value {
+            color: #28a745;
+        }
+
+        .stat-card.inactive .stat-value {
+            color: #ffc107;
+        }
+
+        .stat-card.error .stat-value {
+            color: #dc3545;
+        }
+
+        .accounts {
+            display: grid;
+            gap: 20px;
+        }
+
+        .account-card {
+            background: #2d2d2d;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            padding: 20px;
+            border: 1px solid #404040;
+        }
+
+        .account-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #404040;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .account-header:hover {
+            opacity: 0.8;
+        }
+
+        .account-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .collapse-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+            font-size: 14px;
+            transition: transform 0.3s ease;
+        }
+
+        .account-card.collapsed .collapse-icon {
+            transform: rotate(-90deg);
+        }
+
+        .account-card.collapsed .models-container {
+            display: none;
+        }
+
+        .account-email {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .account-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .account-status.active {
+            background: #28a745;
+            color: white;
+        }
+
+        .account-status.inactive {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .account-status.error {
+            background: #dc3545;
+            color: white;
+        }
+
+        .project-id {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 15px;
+        }
+
+        .models-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .model-category {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .category-header {
+            font-size: 14px;
+            font-weight: 600;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #404040;
+        }
+
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+        }
+
+        .model-card {
+            background: #1f1f1f;
+            border: 1px solid #404040;
+            border-radius: 6px;
+            padding: 12px;
+            transition: all 0.2s;
+        }
+
+        .model-card:hover {
+            border-color: #666;
+            background: #252525;
+        }
+
+        /* Warning styles for low quota */
+        .model-card.warning {
+            border-color: #ffc107;
+            background: #2a2415;
+        }
+
+        .model-card.warning:hover {
+            border-color: #ffc107;
+            background: #332a1a;
+        }
+
+        .model-card.danger {
+            border-color: #dc3545;
+            background: #2a1515;
+        }
+
+        .model-card.danger:hover {
+            border-color: #dc3545;
+            background: #331a1a;
+        }
+
+        .model-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .model-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #e0e0e0;
+        }
+
+        .model-card.warning .model-name,
+        .model-card.danger .model-name {
+            font-weight: 600;
+        }
+
+        .model-percent {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .model-percent.high {
+            color: #28a745;
+        }
+
+        .model-percent.medium {
+            color: #ffc107;
+        }
+
+        .model-percent.low {
+            color: #dc3545;
+        }
+
+        .model-reset {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .error-message {
+            background: #2a1515;
+            color: #ff6b6b;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-size: 14px;
+            border: 1px solid #dc3545;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+        .empty-state h2 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #e0e0e0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 3px solid #404040;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #e0e0e0;
+        }
+
+        .auto-refresh input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .header-controls {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .models-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Antigravity Quota Monitor</h1>
+            <div class="header-controls">
+                <div class="auto-refresh">
+                    <input type="checkbox" id="autoRefresh">
+                    <label for="autoRefresh">Auto-refresh</label>
+                </div>
+                <button class="btn btn-primary" id="refreshBtn">Refresh</button>
+                <div class="status-badge online" id="statusBadge">Online</div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">Total Accounts</div>
+                <div class="stat-value" id="statTotal">0</div>
+            </div>
+            <div class="stat-card active">
+                <div class="stat-label">Active</div>
+                <div class="stat-value" id="statActive">0</div>
+            </div>
+            <div class="stat-card inactive">
+                <div class="stat-label">Inactive</div>
+                <div class="stat-value" id="statInactive">0</div>
+            </div>
+            <div class="stat-card error">
+                <div class="stat-label">Errors</div>
+                <div class="stat-value" id="statError">0</div>
+            </div>
+        </div>
+
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <div>Loading quota data...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/v1/antigravity-quota';
+        let refreshTimer = null;
+        const REFRESH_INTERVAL = 60000; // 60 seconds
+
+        const refreshBtn = document.getElementById('refreshBtn');
+        const autoRefreshCheckbox = document.getElementById('autoRefresh');
+        const statusBadge = document.getElementById('statusBadge');
+        const content = document.getElementById('content');
+
+        // Load data on page load
+        loadData();
+
+        // Event listeners
+        refreshBtn.addEventListener('click', loadData);
+        autoRefreshCheckbox.addEventListener('change', toggleAutoRefresh);
+
+        // Auto-refresh if enabled
+        const savedAutoRefresh = localStorage.getItem('antigravity_autoRefresh') === 'true';
+        if (savedAutoRefresh) {
+            autoRefreshCheckbox.checked = true;
+            startAutoRefresh();
+        }
+
+        function toggleAutoRefresh() {
+            if (autoRefreshCheckbox.checked) {
+                startAutoRefresh();
+                localStorage.setItem('antigravity_autoRefresh', 'true');
+            } else {
+                stopAutoRefresh();
+                localStorage.setItem('antigravity_autoRefresh', 'false');
+            }
+        }
+
+        function startAutoRefresh() {
+            stopAutoRefresh();
+            refreshTimer = setInterval(loadData, REFRESH_INTERVAL);
+        }
+
+        function stopAutoRefresh() {
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+                refreshTimer = null;
+            }
+        }
+
+        async function loadData() {
+            refreshBtn.disabled = true;
+            statusBadge.textContent = 'Loading...';
+            statusBadge.className = 'status-badge loading';
+            content.innerHTML = '<div class="loading"><div class="spinner"></div><div>Loading quota data...</div></div>';
+
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                displayData(data);
+                
+                statusBadge.textContent = 'Online';
+                statusBadge.className = 'status-badge online';
+            } catch (error) {
+                console.error('Failed to load quota:', error);
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <h2>Error</h2>
+                        <p>Failed to load quota data: ${error.message}</p>
+                    </div>
+                `;
+                statusBadge.textContent = 'Error';
+                statusBadge.className = 'status-badge error';
+            } finally {
+                refreshBtn.disabled = false;
+            }
+        }
+
+        function displayData(data) {
+            // Update stats
+            document.getElementById('statTotal').textContent = data.total_accounts || 0;
+            document.getElementById('statActive').textContent = data.active_accounts || 0;
+            document.getElementById('statInactive').textContent = data.inactive_accounts || 0;
+            document.getElementById('statError').textContent = data.error_accounts || 0;
+
+            if (!data.accounts || data.accounts.length === 0) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <h2>No Accounts Found</h2>
+                        <p>No Antigravity accounts detected in the system.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Render accounts
+            const accountsHTML = data.accounts.map((account, index) => createAccountHTML(account, index)).join('');
+            content.innerHTML = `<div class="accounts">${accountsHTML}</div>`;
+        }
+
+        function getModelCategory(modelName) {
+            const name = (modelName || '').toLowerCase();
+            if (name.includes('claude')) return 'claude';
+            if (name.includes('gemini')) return 'gemini';
+            if (name.includes('imagen')) return 'imagen';
+            if (name.includes('gpt')) return 'gpt';
+            return 'other';
+        }
+
+        function getCategoryOrder(category) {
+            const order = {
+                'claude': 1,
+                'gemini': 2,
+                'gpt': 3,
+                'imagen': 4,
+                'other': 5
+            };
+            return order[category] || 99;
+        }
+
+        function getCategoryLabel(category) {
+            const labels = {
+                'claude': 'Claude',
+                'gemini': 'Gemini',
+                'gpt': 'GPT',
+                'imagen': 'Imagen',
+                'other': 'Other Models'
+            };
+            return labels[category] || 'Other';
+        }
+
+        function createAccountHTML(account, index) {
+            const statusClass = account.status || 'error';
+            const accountId = `account-${index}`;
+            
+            let modelsHTML = '';
+            if (account.model_quotas && account.model_quotas.length > 0) {
+                // Group models by category
+                const grouped = {};
+                account.model_quotas.forEach(quota => {
+                    const category = getModelCategory(quota.model);
+                    if (!grouped[category]) {
+                        grouped[category] = [];
+                    }
+                    grouped[category].push(quota);
+                });
+
+                // Sort categories by priority
+                const sortedCategories = Object.keys(grouped).sort((a, b) => {
+                    return getCategoryOrder(a) - getCategoryOrder(b);
+                });
+
+                // Render each category
+                modelsHTML = sortedCategories.map(category => {
+                    const models = grouped[category];
+                    const categoryLabel = getCategoryLabel(category);
+                    const modelsHTML = models.map(quota => createModelHTML(quota)).join('');
+                    
+                    return `
+                        <div class="model-category">
+                            <div class="category-header">${categoryLabel}</div>
+                            <div class="models-grid">${modelsHTML}</div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                modelsHTML = '<p style="color: #888; font-size: 14px;">No quota data available</p>';
+            }
+
+            const errorHTML = account.error 
+                ? `<div class="error-message">Error: ${account.error}</div>`
+                : '';
+
+            return `
+                <div class="account-card" id="${accountId}">
+                    <div class="account-header" onclick="toggleAccount('${accountId}')">
+                        <div class="account-header-left">
+                            <div class="collapse-icon">▼</div>
+                            <div class="account-email">${account.email || 'Unknown'}</div>
+                        </div>
+                        <div class="account-status ${statusClass}">${statusClass.toUpperCase()}</div>
+                    </div>
+                    ${account.project_id ? `<div class="project-id">Project: ${account.project_id}</div>` : ''}
+                    <div class="models-container">${modelsHTML}</div>
+                    ${errorHTML}
+                </div>
+            `;
+        }
+
+        function toggleAccount(accountId) {
+            const accountCard = document.getElementById(accountId);
+            if (accountCard) {
+                accountCard.classList.toggle('collapsed');
+            }
+        }
+
+        function createModelHTML(quota) {
+            const percent = quota.remaining_percent || 0;
+            
+            // Determine color class and warning level
+            let percentClass, warningClass;
+            if (percent >= 50) {
+                percentClass = 'high';
+                warningClass = '';
+            } else if (percent >= 20) {
+                percentClass = 'medium';
+                warningClass = 'warning'; // Yellow warning
+            } else {
+                percentClass = 'low';
+                warningClass = 'danger'; // Red danger
+            }
+
+            const resetTime = quota.reset_time ? formatResetTime(quota.reset_time) : null;
+
+            return `
+                <div class="model-card ${warningClass}">
+                    <div class="model-header">
+                        <div class="model-name">${quota.display_name || quota.model}</div>
+                        <div class="model-percent ${percentClass}">${percent.toFixed(1)}%</div>
+                    </div>
+                    ${resetTime ? `<div class="model-reset">Reset: ${resetTime}</div>` : ''}
+                </div>
+            `;
+        }
+
+        function formatResetTime(timestamp) {
+            try {
+                const date = new Date(timestamp);
+                return date.toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+            } catch (e) {
+                return timestamp;
+            }
+        }
+    </script>
+</body>
+</html>
