@@ -1293,6 +1293,8 @@
         let refreshTimer = null;
         const REFRESH_INTERVAL = 60000;
         let originalData = null;
+        let backoffDelay = 15000; // Start with 15s instead of 5s
+        const maxBackoff = 120000; // 2 minutes max backoff
 
         const refreshBtn = document.getElementById('refreshBtn');
         const autoRefreshCheckbox = document.getElementById('autoRefresh');
@@ -1301,63 +1303,93 @@
         const filterCategory = document.getElementById('filterCategory');
         const searchInput = document.getElementById('searchInput');
 
+        // localStorage helper functions with error handling
+        function getLocalStorage(key, defaultValue = null) {
+            try {
+                const value = localStorage.getItem(key);
+                return value !== null ? value : defaultValue;
+            } catch (e) {
+                console.warn('localStorage not available:', e);
+                return defaultValue;
+            }
+        }
+
+        function setLocalStorage(key, value) {
+            try {
+                localStorage.setItem(key, value);
+                return true;
+            } catch (e) {
+                console.warn('localStorage not available:', e);
+                return false;
+            }
+        }
+
         loadData();
+
+        // Global error boundary to catch unhandled JavaScript errors
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error('Global error:', message, error);
+
+            // Show error to user if content area exists
+            const content = document.getElementById('content');
+            if (content) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <h2>Something went wrong</h2>
+                        <p>An unexpected error occurred. Please refresh the page.</p>
+                        <button class="btn" onclick="location.reload()">Reload Page</button>
+                    </div>
+                `;
+            }
+
+            const statusBadge = document.getElementById('statusBadge');
+            if (statusBadge) {
+                statusBadge.textContent = 'Error';
+                statusBadge.className = 'status-badge error';
+            }
+
+            return true; // Prevent default error handling
+        };
 
         refreshBtn.addEventListener('click', loadData);
         autoRefreshCheckbox.addEventListener('change', toggleAutoRefresh);
         filterCategory.addEventListener('change', applyFilters);
         searchInput.addEventListener('input', debounce(applyFilters, 300));
 
-        const savedAutoRefresh = localStorage.getItem('antigravity_autoRefresh') === 'true';
+        const savedAutoRefresh = getLocalStorage('antigravity_autoRefresh') === 'true';
         if (savedAutoRefresh) {
             autoRefreshCheckbox.checked = true;
             startAutoRefresh();
         }
 
-        // Sync with management.html using BroadcastChannel API
+        // Sync with management.html using BroadcastChannel API (simplified)
         let syncChannel = null;
         let lastAccountCount = 0;
-        
-        try {
-            syncChannel = new BroadcastChannel('cliproxy_auth_sync');
-            syncChannel.onmessage = (event) => {
-                if (event.data && event.data.type === 'auth_file_deleted') {
-                    console.log('Auth file deleted, refreshing quota data...');
-                    setTimeout(() => {
-                        loadData();
-                    }, 500);
-                } else if (event.data && event.data.type === 'auth_file_uploaded') {
-                    console.log('Auth file uploaded, refreshing quota data...');
-                    setTimeout(() => {
-                        loadData();
-                    }, 500);
-                } else if (event.data && event.data.type === 'auth_files_refresh') {
-                    console.log('Auth files refreshed, updating quota data...');
-                    setTimeout(() => {
-                        loadData();
-                    }, 500);
-                }
-            };
-        } catch (e) {
-            console.warn('BroadcastChannel not supported, falling back to localStorage events');
+
+        function setupSync() {
+            try {
+                // Try BroadcastChannel first
+                syncChannel = new BroadcastChannel('cliproxy_auth_sync');
+                syncChannel.onmessage = handleSyncMessage;
+                console.log('BroadcastChannel initialized');
+            } catch (e) {
+                console.warn('BroadcastChannel not supported, using polling fallback');
+                // Use polling as fallback
+                startSyncPolling();
+            }
         }
 
-        // Fallback to localStorage events for cross-tab communication
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'cliproxy_auth_changed' && e.newValue) {
-                try {
-                    const data = JSON.parse(e.newValue);
-                    if (data.type === 'auth_file_deleted' || data.type === 'auth_file_uploaded' || data.type === 'auth_files_refresh') {
-                        console.log('Auth files changed, refreshing quota data...');
-                        setTimeout(() => {
-                            loadData();
-                        }, 500);
-                    }
-                } catch (err) {
-                    console.error('Failed to parse auth change event:', err);
-                }
+        function handleSyncMessage(event) {
+            if (!event.data || !event.data.type) return;
+
+            const authChangeTypes = ['auth_file_deleted', 'auth_file_uploaded', 'auth_files_refresh'];
+            if (authChangeTypes.includes(event.data.type)) {
+                console.log('Auth change detected:', event.data.type);
+                setTimeout(loadData, 500);
             }
-        });
+        }
+
+        setupSync();
 
         // Polling mechanism to detect changes when BroadcastChannel is not available
         // This checks the account count periodically and refreshes if it changes
@@ -1375,11 +1407,15 @@
                             loadData();
                         }
                         lastAccountCount = currentCount;
+                        // Reset backoff on success
+                        backoffDelay = 15000;
                     }
                 } catch (error) {
-                    // Silently fail, will retry on next interval
+                    // Exponential backoff on error
+                    backoffDelay = Math.min(backoffDelay * 2, maxBackoff);
+                    console.warn(`Sync polling error, backing off to ${backoffDelay}ms`);
                 }
-            }, 5000); // Check every 5 seconds
+            }, 15000); // Check every 15 seconds (reduced from 5s for performance)
         }
 
         function stopSyncPolling() {
@@ -1400,9 +1436,14 @@
                 // Tab became visible, refresh data and start polling
                 loadData();
                 startSyncPolling();
+                // Re-start auto-refresh if it was enabled
+                if (autoRefreshCheckbox.checked) {
+                    startAutoRefresh();
+                }
             } else {
                 // Tab hidden, stop polling to save resources
                 stopSyncPolling();
+                stopAutoRefresh(); // Fix memory leak: stop auto-refresh when hidden
             }
         });
 
@@ -1428,10 +1469,10 @@
         function toggleAutoRefresh() {
             if (autoRefreshCheckbox.checked) {
                 startAutoRefresh();
-                localStorage.setItem('antigravity_autoRefresh', 'true');
+                setLocalStorage('antigravity_autoRefresh', 'true');
             } else {
                 stopAutoRefresh();
-                localStorage.setItem('antigravity_autoRefresh', 'false');
+                setLocalStorage('antigravity_autoRefresh', 'false');
             }
         }
 
@@ -1711,8 +1752,14 @@
                 : '';
 
             return `
-                <div class="account-card" id="${accountId}">
-                    <div class="account-header" onclick="toggleAccount('${accountId}')">
+                <div class="account-card" id="${accountId}" role="region" aria-label="Account ${account.email || 'Unknown'}">
+                    <div class="account-header"
+                         onclick="toggleAccount('${accountId}')"
+                         onkeypress="handleKeyPress(event, '${accountId}')"
+                         role="button"
+                         tabindex="0"
+                         aria-expanded="true"
+                         aria-controls="${accountId}-content">
                         <div class="account-header-left">
                             <div class="collapse-icon">▼</div>
                             <div class="account-info">
@@ -1724,16 +1771,29 @@
                             <div class="account-status ${statusClass}">${statusClass.toUpperCase()}</div>
                         </div>
                     </div>
-                    <div class="models-container">${modelsHTML}</div>
+                    <div id="${accountId}-content" class="models-container">${modelsHTML}</div>
                     ${errorHTML}
                 </div>
             `;
         }
 
+        // Keyboard navigation handler for account cards
+        function handleKeyPress(event, accountId) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                toggleAccount(accountId);
+            }
+        }
+
         function toggleAccount(accountId) {
             const accountCard = document.getElementById(accountId);
             if (accountCard) {
-                accountCard.classList.toggle('collapsed');
+                const isCollapsed = accountCard.classList.toggle('collapsed');
+                // Update ARIA attribute for accessibility
+                const header = accountCard.querySelector('.account-header');
+                if (header) {
+                    header.setAttribute('aria-expanded', !isCollapsed);
+                }
             }
         }
 
@@ -1777,13 +1837,15 @@
         function formatResetTime(timestamp) {
             try {
                 const date = new Date(timestamp);
+                // Use browser's detected timezone instead of hard-coded Asia/Saigon
+                const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
                 return date.toLocaleString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit',
                     hour12: false,
-                    timeZone: 'Asia/Saigon'
+                    timeZone: userTimezone
                 });
             } catch (e) {
                 return timestamp;

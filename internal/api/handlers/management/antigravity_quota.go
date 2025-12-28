@@ -24,6 +24,26 @@ const (
 	antigravityClientSecret = "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"
 )
 
+// isDebugLogging checks if debug logging is enabled
+func isDebugLogging() bool {
+	return os.Getenv("DEBUG") == "true"
+}
+
+// getHTTPTimeout returns HTTP client timeout from config or default (10s)
+func getHTTPTimeout(cfg interface{}) time.Duration {
+	// Default timeout
+	timeout := 10 * time.Second
+
+	// Try to get from env var first
+	if timeoutEnv := os.Getenv("ANTIGRAVITY_QUOTA_TIMEOUT"); timeoutEnv != "" {
+		if t, err := time.ParseDuration(timeoutEnv); err == nil && t > 0 {
+			return t
+		}
+	}
+
+	return timeout
+}
+
 // Token refresh response
 type tokenRefreshResponse struct {
 	AccessToken  string `json:"access_token"`
@@ -63,6 +83,32 @@ type ModelQuota struct {
 const (
 	defaultAntigravityUserAgent = "antigravity/1.104.0 darwin/arm64"
 )
+
+// getModelDisplayName maps model names to user-friendly display names
+func getModelDisplayName(modelName string) string {
+	switch modelName {
+	case "gemini-2.5-pro":
+		return "Gemini 2.5 Pro"
+	case "gemini-2.5-flash":
+		return "Gemini 2.5 Flash"
+	case "gemini-2.0-flash":
+		return "Gemini 2.0 Flash"
+	case "gemini-2.0-flash-lite":
+		return "Gemini 2.0 Flash Lite"
+	case "gemini-2.0-flash-exp":
+		return "Gemini 2.0 Flash Exp"
+	case "gemini-exp-1206":
+		return "Gemini Exp"
+	case "gemini-claude-sonnet-4-5", "gemini-claude-sonnet-4-5-thinking":
+		return "Claude Sonnet 4.5"
+	case "gemini-claude-opus-4-5", "gemini-claude-opus-4-5-thinking":
+		return "Claude Opus 4.5"
+	case "imagen-3.0-generate-002":
+		return "Imagen 3"
+	default:
+		return modelName
+	}
+}
 
 // Google API response structures - support both formats
 // Format 1: Array format (current implementation)
@@ -194,14 +240,18 @@ func (h *Handler) GetAntigravityQuota(c *gin.Context) {
 			if err != nil {
 				log.Printf("[Antigravity Quota] Failed to parse expiry for %s: %v (value: %s)", email, err, expiredStr)
 			} else {
-				log.Printf("[Antigravity Quota] Expiry check for %s: expired=%s (UTC), now=%s (UTC), isExpired=%v",
-					email, expiredTime.UTC().Format(time.RFC3339), now.UTC().Format(time.RFC3339), now.After(expiredTime))
+				if isDebugLogging() {
+					log.Printf("[Antigravity Quota] Expiry check for %s: expired=%s (UTC), now=%s (UTC), isExpired=%v",
+						email, expiredTime.UTC().Format(time.RFC3339), now.UTC().Format(time.RFC3339), now.After(expiredTime))
+				}
 				if now.After(expiredTime) {
 					isExpired = true
 				}
 			}
 		} else {
-			log.Printf("[Antigravity Quota] No expiry field for %s", email)
+			if isDebugLogging() {
+				log.Printf("[Antigravity Quota] No expiry field for %s", email)
+			}
 		}
 
 		// Skip if no access token
@@ -226,21 +276,30 @@ func (h *Handler) GetAntigravityQuota(c *gin.Context) {
 		})
 	}
 
-	// Fetch quota for each account concurrently
+	// Fetch quota for each account concurrently with rate limiting
 	var wg sync.WaitGroup
 	results := make(chan *AccountQuota, len(antigravityAuths))
+	sem := make(chan struct{}, 5) // Semaphore to limit concurrent API calls to 5
 
 	for _, auth := range antigravityAuths {
 		wg.Add(1)
 		go func(email, projectID, accessToken, refreshToken, authID string, expired bool) {
 			defer wg.Done()
 
-			log.Printf("[Antigravity Quota] Processing %s: expired=%v, hasRefreshToken=%v", email, expired, refreshToken != "")
+			// Acquire semaphore
+			sem <- struct{}{}
+			defer func() { <-sem }() // Release semaphore
+
+			if isDebugLogging() {
+				log.Printf("[Antigravity Quota] Processing %s: expired=%v, hasRefreshToken=%v", email, expired, refreshToken != "")
+			}
 
 			var actualToken string
 			// If token is expired, try to refresh
 			if expired && refreshToken != "" {
-				log.Printf("[Antigravity Quota] Token expired for %s, attempting refresh...", email)
+				if isDebugLogging() {
+					log.Printf("[Antigravity Quota] Token expired for %s, attempting refresh...", email)
+				}
 				newToken, expiresIn, err := h.refreshAccessToken(refreshToken)
 				if err != nil {
 					log.Printf("[Antigravity Quota] Token refresh FAILED for %s: %v", email, err)
@@ -253,7 +312,9 @@ func (h *Handler) GetAntigravityQuota(c *gin.Context) {
 					}
 					return
 				}
-				log.Printf("[Antigravity Quota] Token refresh SUCCESS for %s (expires in %d seconds)", email, expiresIn)
+				if isDebugLogging() {
+					log.Printf("[Antigravity Quota] Token refresh SUCCESS for %s (expires in %d seconds)", email, expiresIn)
+				}
 				actualToken = newToken
 				// Update auth file with new token
 				h.updateAuthToken(authID, newToken, expiresIn)
@@ -268,7 +329,9 @@ func (h *Handler) GetAntigravityQuota(c *gin.Context) {
 				}
 				return
 			} else {
-				log.Printf("[Antigravity Quota] Using existing valid token for %s", email)
+				if isDebugLogging() {
+					log.Printf("[Antigravity Quota] Using existing valid token for %s", email)
+				}
 				actualToken = accessToken
 			}
 
@@ -321,9 +384,9 @@ func (h *Handler) GetAntigravityQuota(c *gin.Context) {
 
 // fetchQuotaForAccount fetches quota information for a single account
 func (h *Handler) fetchQuotaForAccount(email, projectID, accessToken string) *AccountQuota {
-	// Create HTTP client with proxy settings and timeout
+	// Create HTTP client with proxy settings and configurable timeout
 	httpClient := util.SetProxy(&h.cfg.SDKConfig, &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: getHTTPTimeout(h.cfg),
 	})
 
 	// Try endpoints in order with fallback
@@ -404,8 +467,12 @@ func (h *Handler) fetchQuotaForAccount(email, projectID, accessToken string) *Ac
 func (h *Handler) callQuotaEndpoint(httpClient *http.Client, endpoint, email, projectID, accessToken string) (*AccountQuota, error) {
 	log.Printf("[Antigravity Quota] Calling endpoint for %s: %s", email, endpoint)
 
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	// Create request with empty body
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, endpoint, strings.NewReader("{}"))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader("{}"))
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
@@ -451,27 +518,37 @@ func (h *Handler) callQuotaEndpoint(httpClient *http.Client, endpoint, email, pr
 	log.Printf("[Antigravity Quota] HTTP 200 SUCCESS for %s", email)
 
 	// Log response for debugging (first 500 chars)
-	responsePreview := string(respBody)
-	if len(responsePreview) > 500 {
-		responsePreview = responsePreview[:500] + "..."
+	if isDebugLogging() {
+		responsePreview := string(respBody)
+		if len(responsePreview) > 500 {
+			responsePreview = responsePreview[:500] + "..."
+		}
+		log.Printf("[Antigravity Quota] Response preview for %s: %s", email, responsePreview)
 	}
-	log.Printf("[Antigravity Quota] Response preview for %s: %s", email, responsePreview)
 
 	// Try to parse as array format first
 	var apiRespArray fetchAvailableModelsResponseArray
 	if err := json.Unmarshal(respBody, &apiRespArray); err == nil && len(apiRespArray.Models) > 0 {
-		log.Printf("[Antigravity Quota] Parsed as array format with %d models", len(apiRespArray.Models))
+		if isDebugLogging() {
+			log.Printf("[Antigravity Quota] Parsed as array format with %d models", len(apiRespArray.Models))
+		}
 		return h.buildQuotasFromArray(email, projectID, apiRespArray)
 	}
 
 	// Try to parse as map format (documentation format)
 	var apiRespMap fetchAvailableModelsResponseMap
 	if err := json.Unmarshal(respBody, &apiRespMap); err == nil && len(apiRespMap.Models) > 0 {
-		log.Printf("[Antigravity Quota] Parsed as map format with %d models", len(apiRespMap.Models))
+		if isDebugLogging() {
+			log.Printf("[Antigravity Quota] Parsed as map format with %d models", len(apiRespMap.Models))
+		}
 		return h.buildQuotasFromMap(email, projectID, apiRespMap)
 	}
 
 	// If both fail, return error with response preview
+	responsePreview := string(respBody)
+	if len(responsePreview) > 500 {
+		responsePreview = responsePreview[:500] + "..."
+	}
 	return nil, fmt.Errorf("parse response: failed to parse as array or map format. Response: %s", responsePreview)
 }
 
@@ -486,7 +563,7 @@ func (h *Handler) buildQuotasFromArray(email, projectID string, apiResp fetchAva
 		// Calculate remaining percentage
 		remainingPercent := float64(model.RateLimit.RemainingRpm) / float64(model.RateLimit.RpmLimit) * 100
 
-		displayName := h.getDisplayName(model.Model)
+		displayName := getModelDisplayName(model.Model)
 
 		modelQuotas = append(modelQuotas, ModelQuota{
 			Model:            model.Model,
@@ -516,7 +593,7 @@ func (h *Handler) buildQuotasFromMap(email, projectID string, apiResp fetchAvail
 		remainingFraction := *modelInfo.QuotaInfo.RemainingFraction
 		remainingPercent := remainingFraction * 100.0
 
-		displayName := h.getDisplayName(modelName)
+		displayName := getModelDisplayName(modelName)
 
 		resetTime := ""
 		if modelInfo.QuotaInfo.ResetTime != nil {
@@ -540,36 +617,10 @@ func (h *Handler) buildQuotasFromMap(email, projectID string, apiResp fetchAvail
 	}, nil
 }
 
-// getDisplayName maps model names to display names
-func (h *Handler) getDisplayName(modelName string) string {
-	switch modelName {
-	case "gemini-2.5-pro":
-		return "Gemini 2.5 Pro"
-	case "gemini-2.5-flash":
-		return "Gemini 2.5 Flash"
-	case "gemini-2.0-flash":
-		return "Gemini 2.0 Flash"
-	case "gemini-2.0-flash-lite":
-		return "Gemini 2.0 Flash Lite"
-	case "gemini-2.0-flash-exp":
-		return "Gemini 2.0 Flash Exp"
-	case "gemini-exp-1206":
-		return "Gemini Exp"
-	case "gemini-claude-sonnet-4-5", "gemini-claude-sonnet-4-5-thinking":
-		return "Claude Sonnet 4.5"
-	case "gemini-claude-opus-4-5", "gemini-claude-opus-4-5-thinking":
-		return "Claude Opus 4.5"
-	case "imagen-3.0-generate-002":
-		return "Imagen 3"
-	default:
-		return modelName
-	}
-}
-
 // refreshAccessToken refreshes an expired access token using refresh token
 func (h *Handler) refreshAccessToken(refreshToken string) (string, int64, error) {
 	httpClient := util.SetProxy(&h.cfg.SDKConfig, &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: getHTTPTimeout(h.cfg),
 	})
 
 	// Build form data for token refresh
@@ -579,7 +630,11 @@ func (h *Handler) refreshAccessToken(refreshToken string) (string, int64, error)
 	data.Set("refresh_token", refreshToken)
 	data.Set("grant_type", "refresh_token")
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, "https://oauth2.googleapis.com/token", strings.NewReader(data.Encode()))
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://oauth2.googleapis.com/token", strings.NewReader(data.Encode()))
 	if err != nil {
 		return "", 0, fmt.Errorf("create refresh request: %w", err)
 	}
@@ -638,16 +693,12 @@ func (h *Handler) updateAuthToken(authID, newAccessToken string, expiresIn int64
 func (h *Handler) fetchQuotaFromHeaders(httpClient *http.Client, email, projectID, accessToken string) ([]ModelQuota, error) {
 	log.Printf("[Antigravity Quota] Using header fallback for %s", email)
 
-	// List of models to check
+	// Reduced list of most popular models to check (optimized from 8 to 4)
 	modelsToCheck := []string{
-		"gemini-2.5-pro",
-		"gemini-2.5-flash",
-		"gemini-2.0-flash",
-		"gemini-2.0-flash-lite",
-		"gemini-exp-1206",
-		"gemini-claude-sonnet-4-5",
-		"gemini-claude-opus-4-5",
-		"imagen-3.0-generate-002",
+		"gemini-2.5-flash",         // Most popular
+		"gemini-2.0-flash",         // Popular
+		"gemini-claude-sonnet-4-5", // Claude access
+		"imagen-3.0-generate-002",  // Image generation
 	}
 
 	modelQuotas := make([]ModelQuota, 0)
@@ -712,7 +763,11 @@ func (h *Handler) extractQuotaForModel(httpClient *http.Client, email, projectID
 
 	endpoint := fmt.Sprintf("%s/v1internal:generateContent", baseURL)
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, endpoint, strings.NewReader(string(bodyBytes)))
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(string(bodyBytes)))
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
@@ -777,28 +832,8 @@ func (h *Handler) extractQuotaForModel(httpClient *http.Client, email, projectID
 	// Calculate remaining percentage
 	remainingPercent := float64(remaining) / float64(limit) * 100
 
-	// Map model name to display name
-	displayName := modelName
-	switch modelName {
-	case "gemini-2.5-pro":
-		displayName = "Gemini 2.5 Pro"
-	case "gemini-2.5-flash":
-		displayName = "Gemini 2.5 Flash"
-	case "gemini-2.0-flash":
-		displayName = "Gemini 2.0 Flash"
-	case "gemini-2.0-flash-lite":
-		displayName = "Gemini 2.0 Flash Lite"
-	case "gemini-2.0-flash-exp":
-		displayName = "Gemini 2.0 Flash Exp"
-	case "gemini-exp-1206":
-		displayName = "Gemini Exp"
-	case "gemini-claude-sonnet-4-5", "gemini-claude-sonnet-4-5-thinking":
-		displayName = "Claude Sonnet 4.5"
-	case "gemini-claude-opus-4-5", "gemini-claude-opus-4-5-thinking":
-		displayName = "Claude Opus 4.5"
-	case "imagen-3.0-generate-002":
-		displayName = "Imagen 3"
-	}
+	// Get display name using shared function
+	displayName := getModelDisplayName(modelName)
 
 	log.Printf("[Antigravity Quota] %s - %s: %d/%d (%.1f%%)", email, displayName, remaining, limit, remainingPercent)
 
