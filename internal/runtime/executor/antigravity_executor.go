@@ -1288,6 +1288,8 @@ func modelName2Alias(modelName string) string {
 		return "gemini-claude-sonnet-4-5"
 	case "claude-sonnet-4-5-thinking":
 		return "gemini-claude-sonnet-4-5-thinking"
+	case "claude-opus-4-5":
+		return "gemini-claude-opus-4-5"
 	case "claude-opus-4-5-thinking":
 		return "gemini-claude-opus-4-5-thinking"
 	case "chat_20706", "chat_23310", "gemini-2.5-flash-thinking", "gemini-3-pro-low", "gemini-2.5-pro":
@@ -1311,6 +1313,8 @@ func alias2ModelName(modelName string) string {
 		return "claude-sonnet-4-5"
 	case "gemini-claude-sonnet-4-5-thinking":
 		return "claude-sonnet-4-5-thinking"
+	case "gemini-claude-opus-4-5":
+		return "claude-opus-4-5"
 	case "gemini-claude-opus-4-5-thinking":
 		return "claude-opus-4-5-thinking"
 	default:
@@ -1365,8 +1369,13 @@ func antigravityEffectiveMaxTokens(model string, payload []byte) (max int, fromM
 	if maxTok := gjson.GetBytes(payload, "request.generationConfig.maxOutputTokens"); maxTok.Exists() && maxTok.Int() > 0 {
 		return int(maxTok.Int()), false
 	}
+	// Try global registry first
 	if modelInfo := registry.GetGlobalRegistry().GetModelInfo(model); modelInfo != nil && modelInfo.MaxCompletionTokens > 0 {
 		return modelInfo.MaxCompletionTokens, true
+	}
+	// Fallback to static antigravity config
+	if cfg := registry.GetAntigravityModelConfig()[model]; cfg != nil && cfg.MaxCompletionTokens > 0 {
+		return cfg.MaxCompletionTokens, true
 	}
 	return 0, false
 }
@@ -1374,8 +1383,13 @@ func antigravityEffectiveMaxTokens(model string, payload []byte) (max int, fromM
 // antigravityMinThinkingBudget returns the minimum thinking budget for a model.
 // Falls back to -1 if no model info is found.
 func antigravityMinThinkingBudget(model string) int {
+	// Try global registry first
 	if modelInfo := registry.GetGlobalRegistry().GetModelInfo(model); modelInfo != nil && modelInfo.Thinking != nil {
 		return modelInfo.Thinking.Min
+	}
+	// Fallback to static antigravity config
+	if cfg := registry.GetAntigravityModelConfig()[model]; cfg != nil && cfg.Thinking != nil {
+		return cfg.Thinking.Min
 	}
 	return -1
 }

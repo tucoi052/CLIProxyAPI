@@ -659,6 +659,25 @@ func (r *ModelRegistry) GetModelCount(modelID string) int {
 	return 0
 }
 
+// resolveModelAlias maps incoming model names to their registered aliases.
+// This handles cases where external clients (like Cursor) use upstream model names
+// that differ from the aliased names used in the registry.
+func resolveModelAlias(modelID string) string {
+	// Map upstream Claude model names to their gemini-claude-* aliases
+	switch modelID {
+	case "claude-opus-4-5-thinking":
+		return "gemini-claude-opus-4-5-thinking"
+	case "claude-opus-4-5":
+		return "gemini-claude-opus-4-5"
+	case "claude-sonnet-4-5-thinking":
+		return "gemini-claude-sonnet-4-5-thinking"
+	case "claude-sonnet-4-5":
+		return "gemini-claude-sonnet-4-5"
+	default:
+		return modelID
+	}
+}
+
 // GetModelProviders returns provider identifiers that currently supply the given model
 // Parameters:
 //   - modelID: The model ID to check
@@ -669,7 +688,15 @@ func (r *ModelRegistry) GetModelProviders(modelID string) []string {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
+	// Try direct lookup first
 	registration, exists := r.models[modelID]
+	if !exists || registration == nil || len(registration.Providers) == 0 {
+		// Fallback: try resolving alias
+		aliasedID := resolveModelAlias(modelID)
+		if aliasedID != modelID {
+			registration, exists = r.models[aliasedID]
+		}
+	}
 	if !exists || registration == nil || len(registration.Providers) == 0 {
 		return nil
 	}
@@ -723,6 +750,12 @@ func (r *ModelRegistry) GetModelInfo(modelID string) *ModelInfo {
 	defer r.mutex.RUnlock()
 	if reg, ok := r.models[modelID]; ok && reg != nil {
 		return reg.Info
+	}
+	// Fallback: try resolving alias
+	if aliasedID := resolveModelAlias(modelID); aliasedID != modelID {
+		if reg, ok := r.models[aliasedID]; ok && reg != nil {
+			return reg.Info
+		}
 	}
 	return nil
 }
