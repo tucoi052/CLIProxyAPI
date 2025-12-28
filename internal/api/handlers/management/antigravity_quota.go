@@ -8,11 +8,14 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	coreauth "github.com/router-for-me/CLIProxyAPI/v6/sdk/cliproxy/auth"
 	"github.com/router-for-me/CLIProxyAPI/v6/internal/util"
 )
 
@@ -117,6 +120,45 @@ func (h *Handler) GetAntigravityQuota(c *gin.Context) {
 		}
 		if !isAntigravity {
 			continue
+		}
+
+		// Skip disabled auth entries
+		if auth.Disabled || auth.Status == coreauth.StatusDisabled {
+			continue
+		}
+
+		// Skip if status message indicates it was removed via management API
+		if auth.StatusMessage != "" && strings.EqualFold(strings.TrimSpace(auth.StatusMessage), "removed via management api") {
+			continue
+		}
+
+		// Check if the auth file still exists on disk
+		// If the file was deleted, the auth entry might still be in memory
+		var filePath string
+		if auth.Attributes != nil {
+			if p, ok := auth.Attributes["path"]; ok && p != "" {
+				filePath = p
+			}
+		}
+
+		// If no path in attributes, try to construct it from FileName and AuthDir
+		if filePath == "" && h.cfg != nil && h.cfg.AuthDir != "" {
+			fileName := auth.FileName
+			if fileName == "" {
+				fileName = auth.ID
+			}
+			if fileName != "" {
+				filePath = filepath.Join(h.cfg.AuthDir, fileName)
+			}
+		}
+
+		// Check if file exists
+		if filePath != "" {
+			if _, err := os.Stat(filePath); os.IsNotExist(err) {
+				// File was deleted, skip this auth entry
+				log.Printf("[Antigravity Quota] Skipping auth %s: file not found at %s", auth.ID, filePath)
+				continue
+			}
 		}
 
 		// Extract metadata

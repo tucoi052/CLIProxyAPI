@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VERSION: ${VERSION:-dev}
+        VERSION: ${VERSION:-prod}
         COMMIT: ${COMMIT:-none}
         BUILD_DATE: ${BUILD_DATE:-unknown}
     container_name: cli-proxy-api

@@ -8,11 +8,15 @@ RUN go mod download
 
 COPY . .
 
-ARG VERSION=dev
+ARG VERSION=prod
 ARG COMMIT=none
-ARG BUILD_DATE=unknown
+ARG BUILD_DATE
 
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w -X 'main.Version=${VERSION}' -X 'main.Commit=${COMMIT}' -X 'main.BuildDate=${BUILD_DATE}'" -o ./CLIProxyAPI ./cmd/server/
+# Set BUILD_DATE to current UTC time if not provided, then build
+RUN BUILD_DATE=${BUILD_DATE:-$(date -u +%Y-%m-%dT%H:%M:%SZ)} && \
+    CGO_ENABLED=0 GOOS=linux go build \
+        -ldflags="-s -w -X 'main.Version=${VERSION}' -X 'main.Commit=${COMMIT}' -X 'main.BuildDate=${BUILD_DATE}'" \
+        -o ./CLIProxyAPI ./cmd/server/
 
 FROM alpine:3.22.0
 
@@ -30,7 +34,7 @@ WORKDIR /CLIProxyAPI
 
 EXPOSE 8317
 
-ENV TZ=Asia/Shanghai
+ENV TZ=Asia/Ho_Chi_Minh
 
 RUN cp /usr/share/zoneinfo/${TZ} /etc/localtime && echo "${TZ}" > /etc/timezone
 

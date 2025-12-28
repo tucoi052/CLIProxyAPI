@@ -1314,6 +1314,105 @@
             startAutoRefresh();
         }
 
+        // Sync with management.html using BroadcastChannel API
+        let syncChannel = null;
+        let lastAccountCount = 0;
+        
+        try {
+            syncChannel = new BroadcastChannel('cliproxy_auth_sync');
+            syncChannel.onmessage = (event) => {
+                if (event.data && event.data.type === 'auth_file_deleted') {
+                    console.log('Auth file deleted, refreshing quota data...');
+                    setTimeout(() => {
+                        loadData();
+                    }, 500);
+                } else if (event.data && event.data.type === 'auth_file_uploaded') {
+                    console.log('Auth file uploaded, refreshing quota data...');
+                    setTimeout(() => {
+                        loadData();
+                    }, 500);
+                } else if (event.data && event.data.type === 'auth_files_refresh') {
+                    console.log('Auth files refreshed, updating quota data...');
+                    setTimeout(() => {
+                        loadData();
+                    }, 500);
+                }
+            };
+        } catch (e) {
+            console.warn('BroadcastChannel not supported, falling back to localStorage events');
+        }
+
+        // Fallback to localStorage events for cross-tab communication
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'cliproxy_auth_changed' && e.newValue) {
+                try {
+                    const data = JSON.parse(e.newValue);
+                    if (data.type === 'auth_file_deleted' || data.type === 'auth_file_uploaded' || data.type === 'auth_files_refresh') {
+                        console.log('Auth files changed, refreshing quota data...');
+                        setTimeout(() => {
+                            loadData();
+                        }, 500);
+                    }
+                } catch (err) {
+                    console.error('Failed to parse auth change event:', err);
+                }
+            }
+        });
+
+        // Polling mechanism to detect changes when BroadcastChannel is not available
+        // This checks the account count periodically and refreshes if it changes
+        let syncPollInterval = null;
+        function startSyncPolling() {
+            if (syncPollInterval) return;
+            syncPollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(API_URL);
+                    if (response.ok) {
+                        const data = await response.json();
+                        const currentCount = data.total_accounts || 0;
+                        if (lastAccountCount > 0 && currentCount !== lastAccountCount) {
+                            console.log(`Account count changed from ${lastAccountCount} to ${currentCount}, refreshing...`);
+                            loadData();
+                        }
+                        lastAccountCount = currentCount;
+                    }
+                } catch (error) {
+                    // Silently fail, will retry on next interval
+                }
+            }, 5000); // Check every 5 seconds
+        }
+
+        function stopSyncPolling() {
+            if (syncPollInterval) {
+                clearInterval(syncPollInterval);
+                syncPollInterval = null;
+            }
+        }
+
+        // Start polling when page is visible
+        if (!document.hidden) {
+            startSyncPolling();
+        }
+
+        // Also listen for visibility change to refresh when tab becomes active
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                // Tab became visible, refresh data and start polling
+                loadData();
+                startSyncPolling();
+            } else {
+                // Tab hidden, stop polling to save resources
+                stopSyncPolling();
+            }
+        });
+
+        // Initialize account count after first load
+        setTimeout(() => {
+            if (originalData) {
+                lastAccountCount = originalData.total_accounts || 0;
+            }
+        }, 1000);
+
         function debounce(func, wait) {
             let timeout;
             return function executedFunction(...args) {
