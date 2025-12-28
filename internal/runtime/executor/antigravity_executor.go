@@ -1323,12 +1323,33 @@ func alias2ModelName(modelName string) string {
 }
 
 // normalizeAntigravityThinking clamps or removes thinking config based on model support.
-// For Claude models, it additionally ensures thinking budget < max_tokens.
+// For Claude models, it additionally ensures thinking budget < max_tokens and strips temperature.
 func normalizeAntigravityThinking(model string, payload []byte) []byte {
 	payload = util.StripThinkingConfigIfUnsupported(model, payload)
 	if !util.ModelSupportsThinking(model) {
 		return payload
 	}
+
+	isClaude := strings.Contains(strings.ToLower(model), "claude")
+
+	// For Claude thinking models, strip temperature as it's not supported with extended thinking
+	// and apply default thinking config if not already present
+	if isClaude && strings.HasSuffix(strings.ToLower(model), "-thinking") {
+		// Remove temperature - Claude thinking models require temperature=1 which is the default
+		payload, _ = sjson.DeleteBytes(payload, "request.generationConfig.temperature")
+
+		// Apply default thinking config if not present
+		if !gjson.GetBytes(payload, "request.generationConfig.thinkingConfig").Exists() {
+			// Get min budget from model config, default to 1024
+			minBudget := antigravityMinThinkingBudget(model)
+			if minBudget <= 0 {
+				minBudget = 1024
+			}
+			payload, _ = sjson.SetBytes(payload, "request.generationConfig.thinkingConfig.thinkingBudget", minBudget)
+			payload, _ = sjson.SetBytes(payload, "request.generationConfig.thinkingConfig.include_thoughts", true)
+		}
+	}
+
 	budget := gjson.GetBytes(payload, "request.generationConfig.thinkingConfig.thinkingBudget")
 	if !budget.Exists() {
 		return payload
@@ -1336,7 +1357,6 @@ func normalizeAntigravityThinking(model string, payload []byte) []byte {
 	raw := int(budget.Int())
 	normalized := util.NormalizeThinkingBudget(model, raw)
 
-	isClaude := strings.Contains(strings.ToLower(model), "claude")
 	if isClaude {
 		effectiveMax, setDefaultMax := antigravityEffectiveMaxTokens(model, payload)
 		if effectiveMax > 0 && normalized >= effectiveMax {
